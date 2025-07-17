@@ -22,13 +22,24 @@ jobs:
           cd fhir-app
           npm install
 
-      - name: Build app
+      - name: Prepare for deployment
         run: |
-          cd fhir-app
-          npm run build
+          # Create a temporary directory at the root of the repository to hold the build output
+          mkdir build_output
+          # Move the *contents* of fhir-app/dist into the new build_output directory.
+          # 'shopt -s dotglob' ensures hidden files (like .nojekyll if Vite creates it) are also moved.
+          shopt -s dotglob
+          mv fhir-app/dist/* build_output/
+          shopt -u dotglob # Turn off dotglob after moving
+          echo "Contents of build_output directory after move:"
+          ls -al build_output/
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: fhir-app/dist
+          # Now, publish_dir points to the 'build_output' directory at the root of the workspace.
+          publish_dir: build_output
+          # Uncomment the line below if you want your app to be served from a subdirectory
+          # on GitHub Pages (e.g., https://username.github.io/repo/fhir-app/).
+          # destination_dir: fhir-app
