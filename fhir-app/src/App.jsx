@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Tabs from './components/Tabs';
+import Tabs from 'components/Tabs';
 import RegisterPatient from './components/RegisterPatient';
 import ViewPatients from './components/ViewPatients';
 import PatientDetails from './components/PatientDetails';
