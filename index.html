@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive FHIR Learning Pathfinder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony (Slate/Teal) -->
+    <!-- Application Structure Plan: The SPA is designed with a persistent top navigation to switch between four distinct views, promoting non-linear exploration. The structure is as follows: 1) 'Course Overview': A high-level, side-by-side comparison of the three courses for quick assessment. 2) 'Detailed Curriculum': An in-depth view using selectable tabs and interactive accordions for focused study of a single course. 3) 'Concept Analysis': A visual dashboard featuring a horizontal stacked bar chart to analyze and compare the time allocation for key concept categories across courses. 4) 'Tools & Technology': A simple reference grid of all tools used. This structure was chosen to empower users to explore the curriculum based on their specific needs—whether it's a quick comparison, a deep dive into details, or a thematic analysis of topics—making the information more accessible and useful than a static document. -->
+    <!-- Visualization & Content Choices: Report Info (Course details, topics, duration) -> Goal (Compare, Inform, Analyze) -> Viz/Presentation Method -> Interaction -> Justification. 1) Course Comparison: 3-column card layout (HTML/Tailwind) -> Goal: Compare -> Interaction: Click 'View Details' button to navigate -> Justification: Provides a scannable, high-level summary. 2) Hour-by-Hour Breakdown: Interactive Accordions (HTML/JS/Tailwind) -> Goal: Organize/Inform -> Interaction: Click to expand/collapse -> Justification: Prevents information overload, allows focused exploration. 3) Concept Distribution: Horizontal Stacked Bar Chart (Chart.js/Canvas) -> Goal: Analyze/Compare -> Interaction: Hover for tooltips with details -> Justification: Visually represents the focus and progression of learning categories across courses. 4) Tools List: Simple Grid (HTML/Tailwind) -> Goal: Inform -> Interaction: Hover effects -> Justification: Clear, concise reference. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .nav-button-active { background-color: #0d9488; color: white; }
+        .nav-button-inactive { background-color: #f1f5f9; color: #475569; }
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
+        .chart-container { position: relative; width: 100%; max-width: 900px; margin-left: auto; margin-right: auto; height: 350px; max-height: 400px; }
+        @media (min-width: 768px) { .chart-container { height: 400px; } }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div id="app" class="container mx-auto p-4 md:p-8">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-teal-700">Interactive FHIR Learning Pathfinder</h1>
+            <p class="mt-2 text-slate-600 max-w-3xl mx-auto">An interactive guide to the hands-on FHIR curriculum. Choose a path, dive into the details, or analyze the concepts covered to find the perfect course for your needs.</p>
+        </header>
+
+        <nav id="main-nav" class="flex flex-wrap justify-center gap-2 md:gap-4 mb-8">
+            <button data-target="overview" class="nav-btn px-4 py-2 rounded-full font-semibold transition-colors duration-200">Course Overview</button>
+            <button data-target="curriculum" class="nav-btn px-4 py-2 rounded-full font-semibold transition-colors duration-200">Detailed Curriculum</button>
+            <button data-target="analysis" class="nav-btn px-4 py-2 rounded-full font-semibold transition-colors duration-200">Concept Analysis</button>
+            <button data-target="tools" class="nav-btn px-4 py-2 rounded-full font-semibold transition-colors duration-200">Tools & Technology</button>
+        </nav>
+
+        <main>
+            <section id="overview" class="view-section">
+                <div class="text-center mb-8">
+                     <h2 class="text-2xl font-bold text-slate-700">Course Overviews</h2>
+                     <p class="mt-1 text-slate-500">Get a high-level comparison of the three learning paths. Each course is designed to be self-contained and culminates in a functional application.</p>
+                </div>
+                <div id="overview-content" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                </div>
+            </section>
+
+            <section id="curriculum" class="view-section hidden">
+                 <div class="text-center mb-8">
+                     <h2 class="text-2xl font-bold text-slate-700">Detailed Curriculum</h2>
+                     <p class="mt-1 text-slate-500">Select a course to explore its complete hour-by-hour breakdown. Click on each hour to reveal the topics and hands-on exercises.</p>
+                </div>
+                <div class="flex justify-center gap-2 mb-6 border-b border-slate-200 pb-4">
+                    <button data-course="Beginner" class="course-tab-btn px-4 py-2 rounded-md font-medium text-sm transition">Beginner</button>
+                    <button data-course="Intermediate" class="course-tab-btn px-4 py-2 rounded-md font-medium text-sm transition">Intermediate</button>
+                    <button data-course="Advanced" class="course-tab-btn px-4 py-2 rounded-md font-medium text-sm transition">Advanced</button>
+                </div>
+                <div id="curriculum-content" class="max-w-4xl mx-auto">
+                </div>
+            </section>
+
+            <section id="analysis" class="view-section hidden">
+                <div class="text-center mb-8">
+                     <h2 class="text-2xl font-bold text-slate-700">Concept Analysis</h2>
+                     <p class="mt-1 text-slate-500">This chart visualizes the distribution of learning hours across key FHIR concept categories for each course. Hover over the segments to see how the focus shifts from foundational skills to advanced interoperability topics.</p>
+                </div>
+                <div class="bg-white p-4 sm:p-6 rounded-xl shadow-lg">
+                    <div class="chart-container">
+                        <canvas id="conceptChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tools" class="view-section hidden">
+                 <div class="text-center mb-8">
+                     <h2 class="text-2xl font-bold text-slate-700">Tools & Technology</h2>
+                     <p class="mt-1 text-slate-500">A summary of the essential tools and technologies you will use throughout the hands-on exercises in these courses.</p>
+                </div>
+                <div id="tools-content" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-5xl mx-auto text-center">
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const curriculumData = {
+            Beginner: {
+                title: "Beginner FHIR",
+                subtitle: "Building a Basic Patient Registry",
+                scenario: "A small clinic needs a simple system to register new patients and view their basic demographic information and a few key observations (e.g., blood pressure).",
+                objectives: [
+                    "Understand the core concept of FHIR Resources.",
+                    "Perform basic CRUD operations on FHIR resources.",
+                    "Execute simple FHIR search queries.",
+                    "Set up a local FHIR server (HAPI FHIR)."
+                ],
+                app: "A simple web application that allows users to register, view, update, and delete patient records and add basic observations.",
+                breakdown: [
+                    { hour: "Hour 1", title: "Introduction to FHIR & Setting up the Environment", topics: ["What is FHIR?", "FHIR's role, versions, and maturity.", "Setting up HAPI FHIR.", "Introduction to Postman/Insomnia."] },
+                    { hour: "Hour 2", title: "Core FHIR Resources & Create/Read Operations", topics: ["Patient Resource Deep Dive.", "JSON vs. XML representation.", "Reading Patient Data with GET.", "Hands-on: Create and retrieve a Patient."] },
+                    { hour: "Hour 3", title: "Update & Delete Operations, Basic Search", topics: ["Updating patient data with PUT.", "Deleting records with DELETE.", "Simple patient search by name, gender, birthdate.", "Using _count to limit results."] },
+                    { hour: "Hour 4", title: "Observation Resource & Basic App Development", topics: ["Structure of the Observation resource.", "Linking Observation to a Patient.", "Setting up an HTML registration form.", "Using JavaScript fetch to POST data."] },
+                    { hour: "Hour 5", title: "Completing the Basic Patient Registry App", topics: ["Displaying a dynamic list of patients.", "Creating a detail page for a single patient.", "Populating forms for updates.", "Course Wrap-up and Q&A."] }
+                ]
+            },
+            Intermediate: {
+                title: "Intermediate FHIR",
+                subtitle: "Enhancing Clinical Data & Validation",
+                scenario: "The clinic needs to expand its system to manage more complex clinical data, including information about practitioners and encounters, and ensure better data quality by applying validation rules.",
+                objectives: [
+                    "Utilize more FHIR resources (Practitioner, Encounter).",
+                    "Master advanced search techniques like chained search.",
+                    "Implement server-side validation and understand OperationOutcome.",
+                    "Grasp the concept of FHIR Profiles."
+                ],
+                app: "An enhanced web application to manage Practitioners and Encounters, perform complex searches, and handle validation errors gracefully.",
+                breakdown: [
+                    { hour: "Hour 1", title: "Practitioner, Organization, and Encounter Resources", topics: ["Structure of Practitioner and Organization.", "Structure of the Encounter resource.", "How Reference fields link resources.", "Hands-on: Create linked clinical resources."] },
+                    { hour: "Hour 2", title: "Advanced Search Techniques", topics: ["Chained search (e.g., Observation?subject:Patient.name=...).", "Using _include and _revinclude to fetch related data efficiently.", "Hands-on: Execute advanced searches."] },
+                    { hour: "Hour 3", title: "FHIR Validation and OperationOutcome", topics: ["Detailed look at OperationOutcome.", "How servers validate resources against the base spec.", "Hands-on: Submit invalid data and analyze errors."] },
+                    { hour: "Hour 4", title: "Introduction to FHIR Profiles", topics: ["Purpose of Profiles (e.g., US Core).", "Key elements: StructureDefinition, ValueSet.", "How profiles add new constraints.", "Demonstration: Validating against a simple profile."] },
+                    { hour: "Hour 5", title: "Enhancing the App with Relationships & Validation", topics: ["Integrating Practitioner/Encounter management into the app.", "Implementing robust error feedback from OperationOutcome.", "Course Wrap-up and Q&A."] }
+                ]
+            },
+            Advanced: {
+                title: "Advanced FHIR",
+                subtitle: "Real-World Interoperability & Data Management",
+                scenario: "The clinic's system needs to integrate securely with external applications, automatically react to data changes, and handle large volumes of data for reporting.",
+                objectives: [
+                    "Implement SMART on FHIR for secure app launch.",
+                    "Utilize FHIR Subscriptions for real-time notifications.",
+                    "Perform Bulk Data exports for large-scale retrieval.",
+                    "Work with FHIR Implementation Guides."
+                ],
+                app: "A SMART on FHIR-enabled app that can launch from an EHR sandbox, receive real-time updates via Subscriptions, and manage bulk data exports.",
+                breakdown: [
+                    { hour: "Hour 1", title: "Introduction to SMART on FHIR", topics: ["Why SMART on FHIR? Overview of OAuth 2.0.", "SMART Launch Sequence (Standalone vs. EHR).", "Hands-on: Implement a basic SMART client launch."] },
+                    { hour: "Hour 2", title: "FHIR Subscriptions for Real-time Updates", topics: ["Subscription resource and use cases.", "Channel types: rest-hook, websocket.", "Hands-on: Create a Subscription and build a webhook listener."] },
+                    { hour: "Hour 3", title: "FHIR Bulk Data Export", topics: ["The $export operation for analytics.", "NDJSON format.", "Hands-on: Initiate, monitor, and process a bulk data export."] },
+                    { hour: "Hour 4", title: "Working with Implementation Guides & Advanced Error Handling", topics: ["The role of IGs (e.g., US Core).", "Navigating an IG's structure and constraints.", "Advanced error handling strategies (HTTP status codes, logging)."] },
+                    { hour: "Hour 5", title: "Integrating Advanced Features & Final App Review", topics: ["Integrating SMART launch flow into the app.", "Adding UI for Subscriptions and Bulk Data.", "Comprehensive review and discussion of future FHIR trends."] }
+                ]
+            },
+            tools: [
+                { name: "HAPI FHIR Server", icon: "📦" },
+                { name: "Postman / Insomnia", icon: "📡" },
+                { name: "HTML & CSS", icon: "📄" },
+                { name: "JavaScript", icon: "⚡" },
+                { name: "Python (Optional)", icon: "🐍" },
+                { name: "SMART on FHIR Libraries", icon: "🔒" },
+                { name: "Node.js (Optional)", icon: "🟢" },
+                { name: "Chart.js", icon: "📊" }
+            ]
+        };
+
+        const chartData = {
+            labels: ['Beginner', 'Intermediate', 'Advanced'],
+            datasets: [
+                { label: 'Core Resources', data: [2, 1, 0], backgroundColor: '#14b8a6' },
+                { label: 'Data Operations (CRUD, Search)', data: [2, 1, 0], backgroundColor: '#2dd4bf' },
+                { label: 'App Development & Integration', data: [1, 1, 2], backgroundColor: '#0d9488' },
+                { label: 'Validation & Profiles', data: [0, 2, 1], backgroundColor: '#f97316' },
+                { label: 'Security & Advanced Interop', data: [0, 0, 2], backgroundColor: '#ea580c' }
+            ]
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const mainNav = document.getElementById('main-nav');
+            const viewSections = document.querySelectorAll('.view-section');
+            const overviewContent = document.getElementById('overview-content');
+            const curriculumContent = document.getElementById('curriculum-content');
+            const courseTabBtns = document.querySelectorAll('.course-tab-btn');
+            const toolsContent = document.getElementById('tools-content');
+            
+            function setActiveNav(targetId) {
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    if (btn.dataset.target === targetId) {
+                        btn.classList.add('nav-button-active');
+                        btn.classList.remove('nav-button-inactive');
+                    } else {
+                        btn.classList.remove('nav-button-active');
+                        btn.classList.add('nav-button-inactive');
+                    }
+                });
+
+                viewSections.forEach(section => {
+                    if (section.id === targetId) {
+                        section.classList.remove('hidden');
+                    } else {
+                        section.classList.add('hidden');
+                    }
+                });
+            }
+
+            function createOverviewCard(courseKey) {
+                const course = curriculumData[courseKey];
+                return `
+                    <div class="bg-white rounded-xl shadow-lg p-6 flex flex-col hover:shadow-xl transition-shadow duration-300">
+                        <h3 class="text-xl font-bold text-teal-600">${course.title}</h3>
+                        <p class="font-semibold text-slate-700 mb-2">${course.subtitle}</p>
+                        <p class="text-slate-500 text-sm mb-4 flex-grow">${course.scenario}</p>
+                        <button data-course="${courseKey}" class="view-details-btn mt-auto w-full bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-teal-700 transition-colors">View Details</button>
+                    </div>
+                `;
+            }
+
+            function renderOverview() {
+                overviewContent.innerHTML = Object.keys(curriculumData)
+                    .filter(key => key !== 'tools')
+                    .map(createOverviewCard)
+                    .join('');
+                document.querySelectorAll('.view-details-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        setActiveNav('curriculum');
+                        renderCurriculum(btn.dataset.course);
+                    });
+                });
+            }
+
+            function createAccordionItem(item) {
+                return `
+                    <div class="border border-slate-200 rounded-lg mb-2 bg-white">
+                        <button class="accordion-header w-full text-left p-4 flex justify-between items-center font-semibold text-slate-700 hover:bg-slate-50">
+                            <span>${item.hour}: ${item.title}</span>
+                            <span class="accordion-icon text-teal-500 transform transition-transform duration-300">▶</span>
+                        </button>
+                        <div class="accordion-content">
+                            <div class="p-4 pt-0 text-slate-600">
+                                <ul class="list-disc pl-5 space-y-1 text-sm">
+                                    ${item.topics.map(topic => `<li>${topic}</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function renderCurriculum(courseKey) {
+                const course = curriculumData[courseKey];
+                courseTabBtns.forEach(btn => {
+                    if (btn.dataset.course === courseKey) {
+                        btn.classList.add('bg-teal-600', 'text-white');
+                        btn.classList.remove('bg-slate-200', 'text-slate-600');
+                    } else {
+                        btn.classList.remove('bg-teal-600', 'text-white');
+                        btn.classList.add('bg-slate-200', 'text-slate-600');
+                    }
+                });
+                curriculumContent.innerHTML = course.breakdown.map(createAccordionItem).join('');
+                document.querySelectorAll('.accordion-header').forEach(header => {
+                    header.addEventListener('click', () => {
+                        const content = header.nextElementSibling;
+                        const icon = header.querySelector('.accordion-icon');
+                        if (content.style.maxHeight) {
+                            content.style.maxHeight = null;
+                            icon.style.transform = 'rotate(0deg)';
+                        } else {
+                            content.style.maxHeight = content.scrollHeight + "px";
+                            icon.style.transform = 'rotate(90deg)';
+                        }
+                    });
+                });
+            }
+
+            function renderTools() {
+                toolsContent.innerHTML = curriculumData.tools.map(tool => `
+                    <div class="bg-white rounded-lg shadow p-4 flex flex-col items-center justify-center space-y-2">
+                        <span class="text-3xl">${tool.icon}</span>
+                        <p class="font-semibold text-slate-700 text-sm">${tool.name}</p>
+                    </div>
+                `).join('');
+            }
+            
+            let conceptChartInstance = null;
+            function renderConceptChart() {
+                if (conceptChartInstance) {
+                    conceptChartInstance.destroy();
+                }
+                const ctx = document.getElementById('conceptChart').getContext('2d');
+                conceptChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: chartData,
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: { display: true, text: 'Distribution of Learning Hours by Concept Category', font: { size: 16 } },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) { label += ': '; }
+                                        if (context.parsed.x !== null) {
+                                            label += `${context.parsed.x} hours`;
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { stacked: true, title: { display: true, text: 'Total Hours (Approx.)' } },
+                            y: { stacked: true }
+                        }
+                    }
+                });
+            }
+
+            mainNav.addEventListener('click', (e) => {
+                if (e.target.matches('.nav-btn')) {
+                    const targetId = e.target.dataset.target;
+                    setActiveNav(targetId);
+                    if (targetId === 'analysis') {
+                        renderConceptChart();
+                    }
+                }
+            });
+            
+            courseTabBtns.forEach(btn => {
+                btn.addEventListener('click', () => renderCurriculum(btn.dataset.course));
+            });
+
+            renderOverview();
+            renderTools();
+            setActiveNav('overview');
+            renderCurriculum('Beginner');
+        });
+    </script>
+</body>
+</html>
