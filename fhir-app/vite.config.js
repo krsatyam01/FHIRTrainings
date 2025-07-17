@@ -3,5 +3,6 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: '/FHIRTrainings/fhir-app/'
+  base: '/FHIRTrainings/fhir-app/',
+  root: 'src'
 })
