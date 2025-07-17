@@ -9,8 +9,8 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     permissions: write-all
-    defaults:
-      run:
+   # defaults:
+      # run:
        # working-directory: fhir-app
     steps:
       - name: Checkout repo
