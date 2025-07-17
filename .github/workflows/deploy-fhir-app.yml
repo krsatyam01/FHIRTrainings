@@ -21,6 +21,11 @@ jobs:
         run: |
           cd fhir-app
           npm install
+      - name: Build app
+        run: |
+          # Change to the fhir-app directory before building the app
+          cd fhir-app
+          npm run build
 
       - name: Prepare for deployment
         run: |
