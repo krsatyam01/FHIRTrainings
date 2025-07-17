@@ -6,7 +6,7 @@ export default defineConfig({
   build: {
     outDir: 'dist', // Default build output
     rollupOptions: {
-      input: 'index.html', // Explicitly sets the entry point
+      input: 'src/index.html', // Explicitly sets the entry point
     },
   },
   server: {
