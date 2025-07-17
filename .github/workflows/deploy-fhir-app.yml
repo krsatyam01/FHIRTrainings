@@ -23,12 +23,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-              cd ./fhir-app
+              cd .
               npm install
 
       - name: Build app
         run: |
-              cd ./fhir-app
+              cd .
               npm run build
 
       - name: Deploy to GitHub Pages
