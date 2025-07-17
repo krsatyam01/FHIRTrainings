@@ -3,24 +3,27 @@ name: Deploy FHIR App to GitHub Pages
 on:
   push:
     branches:
-      - main
+      - main # or your default branch
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    permissions: write-all # Ensure enough permissions for GitHub Pages deployment
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '18' # Use a specific, stable Node.js version
 
       - name: Install dependencies
         run: |
+          # Change to the fhir-app directory before installing dependencies
           cd fhir-app
           npm install
+
       - name: Build app
         run: |
           # Change to the fhir-app directory before building the app
