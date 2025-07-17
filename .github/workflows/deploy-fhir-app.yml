@@ -30,24 +30,37 @@ jobs:
           cd fhir-app
           npm run build
 
-      - name: Prepare for deployment
+      - name: Flatten build output for GitHub Pages
         run: |
-          # Create a temporary directory at the root of the repository to hold the build output
-          mkdir build_output
-          # Move the *contents* of fhir-app/dist into the new build_output directory.
-          # 'shopt -s dotglob' ensures hidden files (like .nojekyll if Vite creates it) are also moved.
-          shopt -s dotglob
-          mv fhir-app/dist/* build_output/
-          shopt -u dotglob # Turn off dotglob after moving
-          echo "Contents of build_output directory after move:"
-          ls -al build_output/
+          # Create a new directory at the root of the repository for the final publishable content
+          mkdir public_html
+          echo "Created public_html directory."
+
+          # Move index.html from its nested location to the root of public_html
+          # This is crucial because GitHub Pages expects index.html at the root.
+          mv fhir-app/dist/src/index.html public_html/index.html
+          echo "Moved index.html to public_html/."
+
+          # Move the assets directory to public_html
+          mv fhir-app/dist/assets public_html/assets
+          echo "Moved assets to public_html/."
+
+          # Create a .nojekyll file in the public_html directory.
+          # This tells GitHub Pages not to process the directory with Jekyll
+          # and ensures there's a hidden file for the 'peaceiris' action's glob pattern.
+          touch public_html/.nojekyll
+          echo "Created .nojekyll in public_html/."
+
+          echo "Contents of public_html directory after flattening:"
+          ls -al public_html/
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          # Now, publish_dir points to the 'build_output' directory at the root of the workspace.
-          publish_dir: build_output
+          # Now, publish_dir points to the 'public_html' directory,
+          # which contains index.html at its root and the assets.
+          publish_dir: public_html
           # Uncomment the line below if you want your app to be served from a subdirectory
           # on GitHub Pages (e.g., https://username.github.io/repo/fhir-app/).
           # destination_dir: fhir-app
