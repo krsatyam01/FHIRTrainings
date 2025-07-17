@@ -58,9 +58,7 @@ jobs:
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          # Now, publish_dir points to the 'public_html' directory,
-          # which contains index.html at its root and the assets.
           publish_dir: public_html
-          # Uncomment the line below if you want your app to be served from a subdirectory
-          # on GitHub Pages (e.g., https://username.github.io/repo/fhir-app/).
+          # This line is critical for deploying to a subdirectory on GitHub Pages.
+          # Ensure its indentation is exactly two spaces more than 'with:'.
           destination_dir: fhir-app
