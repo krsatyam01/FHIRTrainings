@@ -3,15 +3,11 @@ name: Deploy FHIR App to GitHub Pages
 on:
   push:
     branches:
-      - main  # or your default branch
+      - main
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    permissions: write-all
-   # defaults:
-      # run:
-       # working-directory: fhir-app
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -23,18 +19,16 @@ jobs:
 
       - name: Install dependencies
         run: |
-              cd fhir-app
-              npm install
+          cd fhir-app
+          npm install
 
       - name: Build app
         run: |
-              cd fhir-app
-              npm run build
+          cd fhir-app
+          npm run build
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: fhir-app/dist
-          # If you want your app at https://username.github.io/repo/fhir-app/
-          #destination_dir: fhir-app
