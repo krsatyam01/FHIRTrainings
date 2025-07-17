@@ -63,4 +63,4 @@ jobs:
           publish_dir: public_html
           # Uncomment the line below if you want your app to be served from a subdirectory
           # on GitHub Pages (e.g., https://username.github.io/repo/fhir-app/).
-          # destination_dir: fhir-app
+          destination_dir: fhir-app
