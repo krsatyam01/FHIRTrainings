@@ -13,7 +13,7 @@ const tabs = [
   { id: 'addObservation', label: 'Add Observation' },
 ];
 
-export const FHIR_BASE_URL = 'http://hapi.fhir.org/baseR4';
+export const FHIR_BASE_URL = 'https://hapi.fhir.org/baseR4';
 
 function App() {
   const [activeTab, setActiveTab] = useState('registerPatient');
