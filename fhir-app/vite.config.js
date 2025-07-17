@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
-  base: './',       // Ensures asset paths are relative to index.html
+  base: '/FHIRTrainings/fhir-app/',       // Ensures asset paths are relative to index.html
   plugins: [react()],
   build: {
     outDir: 'dist', // Default build output
