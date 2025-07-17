@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beginner FHIR App: Patient Registry</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .tab-button-active { background-color: #0d9488; color: white; }
+        .tab-button-inactive { background-color: #e2e8f0; color: #475569; }
+        .section-content { display: none; }
+        .section-content.active { display: block; }
+        .modal { display: none; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fff; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 p-4 md:p-8">
+
+    <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-teal-700">Beginner FHIR App</h1>
+            <p class="mt-2 text-slate-600">A basic patient registry application demonstrating fundamental FHIR operations.</p>
+            <p class="mt-1 text-sm text-slate-500">Using Public HAPI FHIR Server: <a href="http://hapi.fhir.org/baseR4" target="_blank" class="text-teal-600 hover:underline">http://hapi.fhir.org/baseR4</a></p>
+        </header>
+
+        <nav class="flex flex-wrap justify-center gap-2 mb-8 border-b pb-4">
+            <button data-section="registerPatient" class="tab-button px-4 py-2 rounded-md font-semibold transition-colors duration-200">Register Patient</button>
+            <button data-section="viewPatients" class="tab-button px-4 py-2 rounded-md font-semibold transition-colors duration-200">View Patients</button>
+            <button data-section="patientDetails" class="tab-button px-4 py-2 rounded-md font-semibold transition-colors duration-200">Patient Details</button>
+            <button data-section="addObservation" class="tab-button px-4 py-2 rounded-md font-semibold transition-colors duration-200">Add Observation</button>
+        </nav>
+
+        <main>
+            <!-- Register Patient Section -->
+            <section id="registerPatient" class="section-content active">
+                <h2 class="text-2xl font-bold text-slate-700 mb-4">Register New Patient</h2>
+                <p class="text-slate-600 mb-6">Use this form to create a new Patient resource on the FHIR server. Provide basic demographic information.</p>
+                <form id="patientRegistrationForm" class="space-y-4">
+                    <div>
+                        <label for="firstName" class="block text-sm font-medium text-slate-700">First Name</label>
+                        <input type="text" id="firstName" name="firstName" required class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2 focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label for="lastName" class="block text-sm font-medium text-slate-700">Last Name</label>
+                        <input type="text" id="lastName" name="lastName" required class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2 focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label for="gender" class="block text-sm font-medium text-slate-700">Gender</label>
+                        <select id="gender" name="gender" required class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2 focus:ring-teal-500 focus:border-teal-500">
+                            <option value="">Select Gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                            <option value="unknown">Unknown</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="birthDate" class="block text-sm font-medium text-slate-700">Birth Date</label>
+                        <input type="date" id="birthDate" name="birthDate" required class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2 focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label for="addressLine" class="block text-sm font-medium text-slate-700">Address Line 1</label>
+                        <input type="text" id="addressLine" name="addressLine" class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2 focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label for="city" class="block text-sm font-medium text-slate-700">City</label>
+                        <input type="text" id="city" name="city" class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2 focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label for="state" class="block text-sm font-medium text-slate-700">State</label>
+                        <input type="text" id="state" name="state" class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2 focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label for="postalCode" class="block text-sm font-medium text-slate-700">Postal Code</label>
+                        <input type="text" id="postalCode" name="postalCode" class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2 focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <button type="submit" class="w-full bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-teal-700 transition-colors">Register Patient</button>
+                </form>
+            </section>
+
+            <!-- View Patients Section -->
+            <section id="viewPatients" class="section-content">
+                <h2 class="text-2xl font-bold text-slate-700 mb-4">View All Patients</h2>
+                <p class="text-slate-600 mb-6">This section fetches and displays a list of all Patient resources currently stored on the FHIR server. Click "View Details" to see more information or "Delete" to remove a patient record.</p>
+                <button id="refreshPatientsBtn" class="bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors mb-4">Refresh Patients</button>
+                <div id="patientListContainer" class="overflow-x-auto">
+                    <table class="min-w-full bg-white border border-slate-200 rounded-lg shadow-sm">
+                        <thead>
+                            <tr class="bg-slate-100">
+                                <th class="py-2 px-4 border-b text-left text-sm font-medium text-slate-600">ID</th>
+                                <th class="py-2 px-4 border-b text-left text-sm font-medium text-slate-600">Name</th>
+                                <th class="py-2 px-4 border-b text-left text-sm font-medium text-slate-600">Gender</th>
+                                <th class="py-2 px-4 border-b text-left text-sm font-medium text-slate-600">Birth Date</th>
+                                <th class="py-2 px-4 border-b text-left text-sm font-medium text-slate-600">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="patientTableBody">
+                            <tr><td colspan="5" class="text-center py-4 text-slate-500">No patients loaded. Click Refresh.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Patient Details Section -->
+            <section id="patientDetails" class="section-content">
+                <h2 class="text-2xl font-bold text-slate-700 mb-4">Patient Details & Update</h2>
+                <p class="text-slate-600 mb-6">View detailed information for a specific patient. You can also update their demographic information using the form below.</p>
+                <div class="mb-4">
+                    <label for="patientIdSearch" class="block text-sm font-medium text-slate-700">Enter Patient ID</label>
+                    <div class="flex gap-2 mt-1">
+                        <input type="text" id="patientIdSearch" placeholder="e.g., patient-123" class="flex-grow border border-slate-300 rounded-md shadow-sm p-2 focus:ring-teal-500 focus:border-teal-500">
+                        <button id="loadPatientBtn" class="bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors">Load Patient</button>
+                    </div>
+                </div>
+                <div id="patientDetailsDisplay" class="bg-slate-50 p-4 rounded-lg shadow-inner mb-6 hidden">
+                    <h3 class="text-xl font-semibold text-teal-600 mb-2">Loaded Patient: <span id="displayPatientId"></span></h3>
+                    <pre id="patientRawData" class="bg-slate-100 p-3 rounded-md text-sm overflow-x-auto"></pre>
+                </div>
+
+                <h3 class="text-xl font-bold text-slate-700 mb-4">Update Patient Information</h3>
+                <form id="patientUpdateForm" class="space-y-4">
+                    <input type="hidden" id="updatePatientId" name="id">
+                    <div>
+                        <label for="updateFirstName" class="block text-sm font-medium text-slate-700">First Name</label>
+                        <input type="text" id="updateFirstName" name="firstName" class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2 focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label for="updateLastName" class="block text-sm font-medium text-slate-700">Last Name</label>
+                        <input type="text" id="updateLastName" name="lastName" class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2 focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label for="updateGender" class="block text-sm font-medium text-slate-700">Gender</label>
+                        <select id="updateGender" name="gender" class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2 focus:ring-teal-500 focus:border-teal-500">
+                            <option value="">Select Gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                            <option value="unknown">Unknown</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="updateBirthDate" class="block text-sm font-medium text-slate-700">Birth Date</label>
+                        <input type="date" id="updateBirthDate" name="birthDate" class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2 focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label for="updateAddressLine" class="block text-sm font-medium text-slate-700">Address Line 1</label>
+                        <input type="text" id="updateAddressLine" name="addressLine" class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2 focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label for="updateCity" class="block text-sm font-medium text-slate-700">City</label>
+                        <input type="text" id="updateCity" name="city" class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2 focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label for="updateState" class="block text-sm font-medium text-slate-700">State</label>
+                        <input type="text" id="updateState" name="state" class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2 focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label for="updatePostalCode" class="block text-sm font-medium text-slate-700">Postal Code</label>
+                        <input type="text" id="updatePostalCode" name="postalCode" class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2 focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <button type="submit" class="w-full bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-teal-700 transition-colors">Update Patient</button>
+                </form>
+            </section>
+
+            <!-- Add Observation Section -->
+            <section id="addObservation" class="section-content">
+                <h2 class="text-2xl font-bold text-slate-700 mb-4">Add New Observation (Blood Pressure)</h2>
+                <p class="text-slate-600 mb-6">Create a new Blood Pressure Observation resource linked to an existing Patient. Ensure the Patient ID is correct.</p>
+                <form id="observationForm" class="space-y-4">
+                    <div>
+                        <label for="observationPatientId" class="block text-sm font-medium text-slate-700">Patient ID</label>
+                        <input type="text" id="observationPatientId" name="patientId" required class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2 focus:ring-teal-500 focus:border-teal-500" placeholder="e.g., patient-123">
+                    </div>
+                    <div>
+                        <label for="systolic" class="block text-sm font-medium text-slate-700">Systolic Blood Pressure (mmHg)</label>
+                        <input type="number" id="systolic" name="systolic" required class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2 focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label for="diastolic" class="block text-sm font-medium text-slate-700">Diastolic Blood Pressure (mmHg)</label>
+                        <input type="number" id="diastolic" name="diastolic" required class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2 focus:ring-teal-500 focus:border-teal-500">
+                    </div>
+                    <button type="submit" class="w-full bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-teal-700 transition-colors">Add Observation</button>
+                </form>
+            </section>
+        </main>
+    </div>
+
+    <!-- Message Modal -->
+    <div id="messageModal" class="modal fixed inset-0 flex items-center justify-center z-50">
+        <div class="modal-content bg-white rounded-lg shadow-xl p-6 w-11/12 max-w-sm">
+            <h3 id="modalTitle" class="text-xl font-bold mb-4 text-slate-800"></h3>
+            <p id="modalMessage" class="text-slate-700 mb-6"></p>
+            <div id="modalDetails" class="bg-slate-100 p-3 rounded-md text-sm overflow-x-auto mb-6 hidden"></div>
+            <button id="closeModalBtn" class="w-full bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-teal-700 transition-colors">Close</button>
+        </div>
+    </div>
+
+    <script>
+        const HAPI_FHIR_BASE_URL = 'http://hapi.fhir.org/baseR4';
+
+        const patientRegistrationForm = document.getElementById('patientRegistrationForm');
+        const refreshPatientsBtn = document.getElementById('refreshPatientsBtn');
+        const patientTableBody = document.getElementById('patientTableBody');
+        const loadPatientBtn = document.getElementById('loadPatientBtn');
+        const patientIdSearchInput = document.getElementById('patientIdSearch');
+        const patientDetailsDisplay = document.getElementById('patientDetailsDisplay');
+        const displayPatientId = document.getElementById('displayPatientId');
+        const patientRawData = document.getElementById('patientRawData');
+        const patientUpdateForm = document.getElementById('patientUpdateForm');
+        const updatePatientIdInput = document.getElementById('updatePatientId');
+        const observationForm = document.getElementById('observationForm');
+
+        const messageModal = document.getElementById('messageModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalMessage = document.getElementById('modalMessage');
+        const modalDetails = document.getElementById('modalDetails');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+
+        function showModal(title, message, details = null) {
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            if (details) {
+                modalDetails.textContent = JSON.stringify(details, null, 2);
+                modalDetails.classList.remove('hidden');
+            } else {
+                modalDetails.classList.add('hidden');
+            }
+            messageModal.style.display = 'flex';
+        }
+
+        closeModalBtn.addEventListener('click', () => {
+            messageModal.style.display = 'none';
+        });
+
+        async function handleFhirResponse(response) {
+            if (response.ok) {
+                const data = await response.json();
+                showModal('Success', `Operation successful! Resource ID: ${data.id || 'N/A'}`);
+                return data;
+            } else {
+                const errorData = await response.json();
+                let errorMessage = `Error: ${response.status} ${response.statusText}`;
+                if (errorData.resourceType === 'OperationOutcome' && errorData.issue && errorData.issue.length > 0) {
+                    errorMessage += `\nDetails: ${errorData.issue.map(issue => issue.diagnostics || issue.details?.text || issue.code).join('; ')}`;
+                    showModal('Error', errorMessage, errorData);
+                } else {
+                    showModal('Error', errorMessage, errorData);
+                }
+                throw new Error(errorMessage);
+            }
+        }
+
+        // Section switching logic
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.tab-button').forEach(btn => {
+                    btn.classList.remove('tab-button-active');
+                    btn.classList.add('tab-button-inactive');
+                });
+                button.classList.add('tab-button-active');
+                button.classList.remove('tab-button-inactive');
+
+                document.querySelectorAll('.section-content').forEach(section => {
+                    section.classList.remove('active');
+                });
+                document.getElementById(button.dataset.section).classList.add('active');
+
+                // Auto-refresh patient list when navigating to View Patients
+                if (button.dataset.section === 'viewPatients') {
+                    getAllPatients();
+                }
+            });
+        });
+
+        // Default active tab
+        document.querySelector('.tab-button[data-section="registerPatient"]').click();
+
+        // 1. Register Patient (Create)
+        patientRegistrationForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(patientRegistrationForm);
+            const patient = {
+                resourceType: "Patient",
+                name: [{
+                    given: [formData.get('firstName')],
+                    family: formData.get('lastName')
+                }],
+                gender: formData.get('gender'),
+                birthDate: formData.get('birthDate'),
+                address: [{
+                    line: [formData.get('addressLine')],
+                    city: formData.get('city'),
+                    state: formData.get('state'),
+                    postalCode: formData.get('postalCode')
+                }]
+            };
+
+            try {
+                const response = await fetch(`${HAPI_FHIR_BASE_URL}/Patient`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/fhir+json' },
+                    body: JSON.stringify(patient)
+                });
+                await handleFhirResponse(response);
+                patientRegistrationForm.reset();
+            } catch (error) {
+                console.error('Patient registration failed:', error);
+            }
+        });
+
+        // 2. View All Patients (Read All)
+        async function getAllPatients() {
+            patientTableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-slate-500">Loading patients...</td></tr>';
+            try {
+                const response = await fetch(`${HAPI_FHIR_BASE_URL}/Patient?_count=100`, {
+                    headers: { 'Accept': 'application/fhir+json' }
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const bundle = await response.json();
+                patientTableBody.innerHTML = ''; // Clear loading message
+
+                if (bundle.entry && bundle.entry.length > 0) {
+                    bundle.entry.forEach(entry => {
+                        const patient = entry.resource;
+                        const row = `
+                            <tr class="hover:bg-slate-50 border-b border-slate-100 last:border-b-0">
+                                <td class="py-2 px-4 text-sm text-slate-800">${patient.id}</td>
+                                <td class="py-2 px-4 text-sm text-slate-800">${patient.name ? patient.name[0]?.given?.join(' ') + ' ' + patient.name[0]?.family : 'N/A'}</td>
+                                <td class="py-2 px-4 text-sm text-slate-800">${patient.gender || 'N/A'}</td>
+                                <td class="py-2 px-4 text-sm text-slate-800">${patient.birthDate || 'N/A'}</td>
+                                <td class="py-2 px-4 text-sm text-slate-800">
+                                    <button onclick="viewPatientDetails('${patient.id}')" class="bg-blue-500 text-white text-xs px-2 py-1 rounded-md hover:bg-blue-600 mr-1">View Details</button>
+                                    <button onclick="deletePatient('${patient.id}')" class="bg-red-500 text-white text-xs px-2 py-1 rounded-md hover:bg-red-600">Delete</button>
+                                </td>
+                            </tr>
+                        `;
+                        patientTableBody.insertAdjacentHTML('beforeend', row);
+                    });
+                } else {
+                    patientTableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-slate-500">No patients found on the server.</td></tr>';
+                }
+            } catch (error) {
+                console.error('Failed to fetch patients:', error);
+                patientTableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-red-500">Error loading patients: ${error.message}. Please try again later.</td></tr>`;
+                showModal('Error', 'Failed to fetch patients.', { message: error.message });
+            }
+        }
+
+        refreshPatientsBtn.addEventListener('click', getAllPatients);
+
+        // 3. View Patient Details (Read by ID) & Populate Update Form
+        async function getPatientDetails(patientId) {
+            patientDetailsDisplay.classList.add('hidden');
+            patientRawData.textContent = 'Loading patient data...';
+            patientIdSearchInput.value = patientId; // Pre-fill search input
+            document.querySelector('.tab-button[data-section="patientDetails"]').click(); // Switch to details tab
+
+            try {
+                const response = await fetch(`${HAPI_FHIR_BASE_URL}/Patient/${patientId}`, {
+                    headers: { 'Accept': 'application/fhir+json' }
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const patient = await response.json();
+                displayPatientId.textContent = patient.id;
+                patientRawData.textContent = JSON.stringify(patient, null, 2);
+                patientDetailsDisplay.classList.remove('hidden');
+
+                // Populate update form
+                updatePatientIdInput.value = patient.id;
+                document.getElementById('updateFirstName').value = patient.name && patient.name[0]?.given ? patient.name[0].given.join(' ') : '';
+                document.getElementById('updateLastName').value = patient.name && patient.name[0]?.family ? patient.name[0].family : '';
+                document.getElementById('updateGender').value = patient.gender || '';
+                document.getElementById('updateBirthDate').value = patient.birthDate || '';
+                document.getElementById('updateAddressLine').value = patient.address && patient.address[0]?.line ? patient.address[0].line.join(' ') : '';
+                document.getElementById('updateCity').value = patient.address && patient.address[0]?.city ? patient.address[0].city : '';
+                document.getElementById('updateState').value = patient.address && patient.address[0]?.state ? patient.address[0].state : '';
+                document.getElementById('updatePostalCode').value = patient.address && patient.address[0]?.postalCode ? patient.address[0].postalCode : '';
+
+            } catch (error) {
+                console.error(`Failed to fetch patient ${patientId}:`, error);
+                patientRawData.textContent = `Error loading patient: ${error.message}`;
+                showModal('Error', `Failed to load patient details for ID: ${patientId}.`, { message: error.message });
+            }
+        }
+
+        loadPatientBtn.addEventListener('click', () => {
+            const id = patientIdSearchInput.value.trim();
+            if (id) {
+                getPatientDetails(id);
+            } else {
+                showModal('Warning', 'Please enter a Patient ID to load details.');
+            }
+        });
+
+        // 4. Update Patient
+        patientUpdateForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const patientId = updatePatientIdInput.value;
+            if (!patientId) {
+                showModal('Error', 'No patient ID found for update. Please load a patient first.');
+                return;
+            }
+
+            const formData = new FormData(patientUpdateForm);
+            const updatedPatient = {
+                resourceType: "Patient",
+                id: patientId,
+                name: [{
+                    given: [formData.get('firstName')],
+                    family: formData.get('lastName')
+                }],
+                gender: formData.get('gender'),
+                birthDate: formData.get('birthDate'),
+                address: [{
+                    line: [formData.get('addressLine')],
+                    city: formData.get('city'),
+                    state: formData.get('state'),
+                    postalCode: formData.get('postalCode')
+                }]
+            };
+
+            try {
+                const response = await fetch(`${HAPI_FHIR_BASE_URL}/Patient/${patientId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/fhir+json' },
+                    body: JSON.stringify(updatedPatient)
+                });
+                await handleFhirResponse(response);
+                getPatientDetails(patientId); // Refresh details after update
+            } catch (error) {
+                console.error('Patient update failed:', error);
+            }
+        });
+
+        // 5. Delete Patient
+        async function deletePatient(patientId) {
+            if (!confirm(`Are you sure you want to delete Patient with ID: ${patientId}?`)) {
+                return;
+            }
+            try {
+                const response = await fetch(`${HAPI_FHIR_BASE_URL}/Patient/${patientId}`, {
+                    method: 'DELETE'
+                });
+                await handleFhirResponse(response);
+                getAllPatients(); // Refresh list after deletion
+            } catch (error) {
+                console.error('Patient deletion failed:', error);
+            }
+        }
+
+        // 6. Add Observation (Blood Pressure)
+        observationForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(observationForm);
+            const patientId = formData.get('patientId');
+            const systolic = formData.get('systolic');
+            const diastolic = formData.get('diastolic');
+
+            if (!patientId || !systolic || !diastolic) {
+                showModal('Warning', 'Please fill in all fields for the observation.');
+                return;
+            }
+
+            const observation = {
+                resourceType: "Observation",
+                status: "final",
+                code: {
+                    coding: [{
+                        system: "http://loinc.org",
+                        code: "85354-9",
+                        display: "Blood pressure panel with all children optional"
+                    }]
+                },
+                subject: {
+                    reference: `Patient/${patientId}`
+                },
+                effectiveDateTime: new Date().toISOString(),
+                component: [
+                    {
+                        code: {
+                            coding: [{
+                                system: "http://loinc.org",
+                                code: "8480-6",
+                                display: "Systolic blood pressure"
+                            }]
+                        },
+                        valueQuantity: {
+                            value: parseInt(systolic),
+                            unit: "mmHg",
+                            system: "http://unitsofmeasure.org",
+                            code: "mmHg"
+                        }
+                    },
+                    {
+                        code: {
+                            coding: [{
+                                system: "http://loinc.org",
+                                code: "8462-4",
+                                display: "Diastolic blood pressure"
+                            }]
+                        },
+                        valueQuantity: {
+                            value: parseInt(diastolic),
+                            unit: "mmHg",
+                            system: "http://unitsofmeasure.org",
+                            code: "mmHg"
+                        }
+                    }
+                ]
+            };
+
+            try {
+                const response = await fetch(`${HAPI_FHIR_BASE_URL}/Observation`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/fhir+json' },
+                    body: JSON.stringify(observation)
+                });
+                await handleFhirResponse(response);
+                observationForm.reset();
+            } catch (error) {
+                console.error('Observation creation failed:', error);
+            }
+        });
+
+        // Global confirm override for better UI (as per instructions)
+        window.confirm = function(message) {
+            return new Promise((resolve) => {
+                modalTitle.textContent = 'Confirm Action';
+                modalMessage.textContent = message;
+                modalDetails.classList.add('hidden'); // Hide details for simple confirm
+                const confirmButton = document.createElement('button');
+                confirmButton.textContent = 'Confirm';
+                confirmButton.className = 'bg-red-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-600 mr-2';
+                const cancelButton = document.createElement('button');
+                cancelButton.textContent = 'Cancel';
+                cancelButton.className = 'bg-slate-300 text-slate-800 font-semibold py-2 px-4 rounded-lg hover:bg-slate-400';
+
+                const buttonContainer = document.createElement('div');
+                buttonContainer.className = 'flex justify-end mt-4';
+                buttonContainer.appendChild(confirmButton);
+                buttonContainer.appendChild(cancelButton);
+
+                const originalCloseBtn = closeModalBtn;
+                originalCloseBtn.style.display = 'none'; // Hide default close button
+
+                messageModal.querySelector('.modal-content').appendChild(buttonContainer);
+                messageModal.style.display = 'flex';
+
+                confirmButton.onclick = () => {
+                    messageModal.style.display = 'none';
+                    buttonContainer.remove();
+                    originalCloseBtn.style.display = 'block';
+                    resolve(true);
+                };
+                cancelButton.onclick = () => {
+                    messageModal.style.display = 'none';
+                    buttonContainer.remove();
+                    originalCloseBtn.style.display = 'block';
+                    resolve(false);
+                };
+            });
+        };
+    </script>
+</body>
+</html>
