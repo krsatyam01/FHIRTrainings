@@ -32,4 +32,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: fhir-app/dist
           # If you want your app at https://username.github.io/repo/fhir-app/
-          set "destination_dir: fhir-app"
+          destination_dir: fhir-app
